@@ -1,7 +1,8 @@
 SiameseNN-Object-Tracker
 ==============================
 
-We use Siamese Neural Networks to perform one-shot leao
+We train a Siamese Neural Network to perform one-shot learning which can be used for object 
+tracking. 
 
 Project Organization
 ------------
