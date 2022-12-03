@@ -4,7 +4,7 @@ setup(
     name='src',
     packages=find_packages(),
     version='0.1.0',
-    description='We use Siamese Neural Networks to perform one-shot leao',
+    description='We use Siamese Neural Networks to perform one-shot leaning',
     author='Rishi Gundakaram',
     license='MIT',
 )

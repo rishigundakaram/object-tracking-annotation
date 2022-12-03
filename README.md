@@ -1,8 +1,21 @@
 SiameseNN-Object-Tracker
 ==============================
 
-We train a Siamese Neural Network to perform one-shot learning which can be used for object 
+We train a Siamese Neural Network (SNN) to perform one-shot learning which can be used for object 
 tracking. 
+
+Overall plan: 
+1. Train an SNN for object classification
+2. Use the SNN with the Yolo algorithm (and some minor changes) to perform
+object detection
+3. Finetune SNN on an object tracking dataset. 
+4. Serve the model and create an interactive webpage where users can upload videos,
+track objects within the video, and download the annotations for them. 
+
+
+Below is an image of the architecture of the Siamese Neural Network in addition to the 
+overall model. 
+![plot](./reports/figures/architecture.jpg)
 
 Project Organization
 ------------
