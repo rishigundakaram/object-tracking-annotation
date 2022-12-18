@@ -73,6 +73,43 @@ class SiameseNN(nn.Module):
         out_2 = self.backbone(cmp_im)
         return self.sim(torch.abs(out_1 - out_2))
 
+class SiameseDetector(nn.Module): 
+    def __init__(self, backbone=None, distance_dim=4096): 
+        super(SiameseDetector, self).__init__()
+        self.distance_dim = distance_dim
+        if backbone is None: 
+            self.backbone = resnet18(weights=ResNet18_Weights.DEFAULT)
+        else: 
+            self.backbone = backbone
+        self.features = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(1000, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Dropout(p=0.5),
+            nn.Linear(512, 64),
+            nn.BatchNorm1d(64),
+            nn.Sigmoid(),
+            nn.Dropout(p=0.5),
+        )
+        self.sim = nn.Sequential(
+            nn.Linear(64, 1),
+            nn.Sigmoid(),
+        )
+        self.bb_regression = nn.Sequential(
+            nn.Linear(64, 4),
+        )
+        
+    def forward(self, base_im, cmp_im): 
+        out_1 = self.backbone(base_im)
+        out_2 = self.backbone(cmp_im)
+        features = self.features(torch.abs(out_1 - out_2))
+        sim = self.sim(features)
+        bb_regression = self.bb_regression(features)
+        return torch.cat((sim, bb_regression))
+    
+    
 class Triplet_Dataset(torch.utils.data.Dataset): 
     def __init__(self, train_classes, num_samples, seed, train=True) -> None:
         super().__init__()
@@ -133,6 +170,8 @@ class Triplet_Dataset(torch.utils.data.Dataset):
             im_negative[idx, :, :, :] = self.fullset[neg_idx][0]
         self.anchors, self.im_positive, self.im_negative = anchors, im_positive, im_negative
 
+
+    
 class Triplet_Loss: 
     def __init__(self, margin) -> None:
         self.margin = margin
