@@ -1,5 +1,8 @@
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
+import cv2
+
+
 
 class box_proposal: 
     def __init__(self, M=5, N=9) -> None:
@@ -27,6 +30,11 @@ class box_proposal:
                 boxes.append(image.crop((i/self.M*width, j/self.N * height, (i+1)/self.M*width, (j+1)/self.N * height)))
         return boxes
 
+class post_processing: 
+    def __init__(self, iou_threhold, ) -> None:
+        pass
+    
+    
 
 if __name__ == '__main__':  
     # creating a object
