@@ -41,16 +41,16 @@ def preprocess_video(video):
         success, frame = video.read() 
     return frames
 
-def combine_bb_frames_into_video(frames, boxes, fps): 
+def combine_bb_frames_into_video(frames, boxes, fps, filename): 
     color = (0, 255, 0)
     thickness = 3
     width, height, _ = np.shape(frames[0])
     fourcc = cv2.VideoWriter_fourcc(*'vp80')
-    video = cv2.VideoWriter('output.webm', fourcc, fps, (height,width))
+    video = cv2.VideoWriter(filename, fourcc, fps, (height,width))
     for idx in range(len(frames)): 
         cv_frame = cv2.cvtColor(np.array(frames[idx]), cv2.COLOR_RGB2BGR)
         start = (boxes[idx][0], boxes[idx][1])
         end = (boxes[idx][0] + boxes[idx][2], boxes[idx][1] + boxes[idx][3])
         cv_frame = cv2.rectangle(cv_frame, start, end, color, thickness)
         video.write(cv_frame)
-    return video
+    video.release()

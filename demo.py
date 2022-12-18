@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
-
+from tempfile import NamedTemporaryFile
 
 from models.tracker import SiameseTracker, run_tracker
 from src.data.utils import preprocess_video, combine_bb_frames_into_video
@@ -30,12 +30,11 @@ if uploaded_video is not None: # run only when user uploads video
         key="color_annotation_app",
     )
     
-    st.write(canvas_result.json_data)
     if len(canvas_result.json_data["objects"]) > 0: 
         init_box = [canvas_result.json_data["objects"][0][i] for i in ["left", "top", "width", "height"]]
         bboxes = run_tracker(tracker, frames, init_box)
-        video = combine_bb_frames_into_video(frames, bboxes, 24)
-        result_video = open('output.webm', "rb")
-        st.video(result_video.read(), "video/webm")
+        file = NamedTemporaryFile(suffix='.webm')
+        combine_bb_frames_into_video(frames, bboxes, 24, file.name)
+        st.video(file.read(), "video/webm")
         
     
