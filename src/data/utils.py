@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from PIL import Image
+import streamlit as st
 
 def resize_with_pad(image: np.array, 
                     new_shape, 
@@ -23,6 +24,8 @@ def resize_with_pad(image: np.array,
     left, right = delta_w//2, delta_w-(delta_w//2)
     image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=padding_color)
     return image
+
+@st.cache(allow_output_mutation=True)
 
 def preprocess_video(video): 
     """Turns cv2 VideoCapture object into array of processed PIL images

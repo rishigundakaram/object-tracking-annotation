@@ -18,9 +18,8 @@ if uploaded_video is not None: # run only when user uploads video
         f.write(uploaded_video.read()) # save video to disk
 
     vidcap = cv2.VideoCapture(vid) # load video from disk
-    print('preprocessing')
+    
     frames = preprocess_video(vidcap)
-    print('done')
     canvas_result = st_canvas(
         fill_color="#21FF0000",
         stroke_color="#21FF00",
@@ -29,12 +28,15 @@ if uploaded_video is not None: # run only when user uploads video
         drawing_mode='rect',
         key="color_annotation_app",
     )
-    
-    if len(canvas_result.json_data["objects"]) > 0: 
-        init_box = [canvas_result.json_data["objects"][0][i] for i in ["left", "top", "width", "height"]]
-        bboxes = run_tracker(tracker, frames, init_box)
-        file = NamedTemporaryFile(suffix='.webm')
-        combine_bb_frames_into_video(frames, bboxes, 24, file.name)
-        st.video(file.read(), "video/webm")
+    st.write("Draw a bounding box around the object of interest!")
+    try: 
+        if len(canvas_result.json_data["objects"]) > 0:  
+            init_box = [canvas_result.json_data["objects"][0][i] for i in ["left", "top", "width", "height"]]
+            bboxes = run_tracker(tracker, frames, init_box)
+            file = NamedTemporaryFile(suffix='.webm')
+            combine_bb_frames_into_video(frames, bboxes, 24, file.name)
+            st.video(file.read(), "video/webm")
+    except: 
+        pass
         
     
