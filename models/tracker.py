@@ -1,20 +1,23 @@
 import PIL
 import torch
+from torch import nn
 
 from got10k.trackers import Tracker
 from got10k.experiments import ExperimentGOT10k
 
 from .siamese import SiameseDetector
-
+from .siamese import image_encoder, object_encoder
+    
 class SiameseTracker(Tracker):
-    def __init__(self, weights=None):
+    def __init__(self, weights=None, size=32):
         super(SiameseTracker, self).__init__(
             name='SiameseTracker', # name of the tracker
             is_deterministic=True   # deterministic (True) or stochastic (False)
         )
-        sim_network = SiameseDetector()
+        self.sim_network = SiameseDetector()
         if weights:
-            sim_network.load_state_dict(torch.load(weights))
+            self.sim_network.load_state_dict(torch.load(weights))
+        # self.im_post_processor = im_post_processing()
         
     
     def init(self, image, box):
@@ -40,6 +43,9 @@ class SiameseTracker(Tracker):
             np.ndarray -- Estimated target bounding box (4x1,
                 [left, top, width, height]) in ``image``.
         """
+        sub_images = self.box_proposal(image)
+        output = self.sim_network(self.cmp_im, sub_images)
+        # self.box = self.im_post_processor(output)
         return self.box
 
 

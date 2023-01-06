@@ -7,9 +7,13 @@ from tempfile import NamedTemporaryFile
 
 from models.tracker import SiameseTracker, run_tracker
 from src.data.utils import preprocess_video, combine_bb_frames_into_video
+from models.siamfc import TrackerSiamFC
+from models.siamrpn import TrackerSiamRPN
 
 st.title('Object Tracking Anotation App')
-tracker = SiameseTracker()
+# tracker = SiameseTracker()
+# tracker = TrackerSiamFC(net_path='./weights/siamFC.pth')
+tracker = TrackerSiamRPN(net_path='./weights/siamrpn.pth')
 uploaded_video = st.file_uploader('Upload a Video')
 
 if uploaded_video is not None: # run only when user uploads video
@@ -29,14 +33,13 @@ if uploaded_video is not None: # run only when user uploads video
         key="color_annotation_app",
     )
     st.write("Draw a bounding box around the object of interest!")
-    try: 
-        if len(canvas_result.json_data["objects"]) > 0:  
-            init_box = [canvas_result.json_data["objects"][0][i] for i in ["left", "top", "width", "height"]]
-            bboxes = run_tracker(tracker, frames, init_box)
-            file = NamedTemporaryFile(suffix='.webm')
-            combine_bb_frames_into_video(frames, bboxes, 24, file.name)
-            st.video(file.read(), "video/webm")
-    except: 
-        pass
+    if len(canvas_result.json_data["objects"]) > 0:  
+        init_box = [canvas_result.json_data["objects"][0][i] for i in ["left", "top", "width", "height"]]
+        bboxes = run_tracker(tracker, frames, init_box)
+        # file = 'video.webm'
+        file = NamedTemporaryFile(suffix='.webm')
+        combine_bb_frames_into_video(frames, bboxes, 24, file.name)
+        print('here')
+        st.video(file.read(), "video/webm")
         
     

@@ -10,6 +10,83 @@ from random import choices, choice, seed
 import matplotlib.pyplot as plt
 import numpy as np
 
+class image_encoder(nn.Module): 
+    def __init__(self, size=32) -> None:
+        super(image_encoder, self).__init__()
+        self.size = size
+        self.encoder = nn.Sequential()
+        
+    def rescale(self, image): 
+        width, height, _ = np.shape(image)
+        num_w_boxes = width // self.size
+        num_h_boxes = height // self.size
+        max_w_size = self.size * num_w_boxes
+        max_h_size = self.size * num_h_boxes
+        return num_w_boxes, num_w_boxes, image.thumbnail((max_w_size, max_h_size))
+    
+    def forward(self, image): 
+        num_w_boxes, num_h_boxes, image = self.rescale(image)
+        return num_w_boxes, num_h_boxes, self.encoder(image)
+
+class object_encoder(nn.Module): 
+    def __init__(self, size=32) -> None:
+        super(object_encoder, self).__init__()
+        self.size = size
+        self.encoder = nn.Sequential()
+        
+    def rescale(self, image): 
+        return image.thumbnail((self.size, self.size))
+    
+    def forward(self, image, rescale=True): 
+        if rescale: 
+            image = self.rescale(image)
+        return self.encoder(image)
+
+class SiameseDetector(nn.Module): 
+    def __init__(self, backbone=None, size=32, preds=1): 
+        super(SiameseDetector, self).__init__()
+        self.preds = preds
+        self.image_encoder = image_encoder(size=size)
+        self.object_encoder = object_encoder(size=size)
+        self.features = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(1000, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+
+            nn.Dropout(p=0.5),
+            nn.Linear(512, 64),
+            nn.BatchNorm1d(64),
+            nn.Sigmoid(),
+            nn.Dropout(p=0.5),
+        )
+        # represents either same or not and confidence
+        self.sim_conf = nn.Sequential(
+            nn.Linear(64, 1 + self.preds),
+            nn.Sigmoid(),
+        )
+        # each possible bounding box
+        self.bb_regression = nn.Sequential(
+            nn.Linear(64, 4*self.preds),
+        )
+        
+    def forward(self, img, obj): 
+        num_w_boxes, num_h_boxes, img = self.image_encoder(img)
+        obj = self.object_encoder(obj)
+        images = torch.split(img, [num_w_boxes, num_h_boxes])
+        output = torch.zeros((num_w_boxes, num_h_boxes, 5 * self.preds))
+        idx_w = 0
+        idx_h = 0
+        for img in enumerate(images): 
+            if idx_w == num_w_boxes:
+                idx_w = 0
+                idx_h += 1
+            feature = self.features(torch.abs(img - obj))
+            sim = self.sim(feature)
+            bb_regression = self.bb_regression(feature)
+            out = torch.cat((sim, bb_regression))
+            output[idx_w, idx_h, :] = out
+        return output
 
 class Triplet_Dataset(torch.utils.data.Dataset): 
     def __init__(self, dataset):
@@ -72,42 +149,6 @@ class SiameseNN(nn.Module):
         out_1 = self.backbone(base_im)
         out_2 = self.backbone(cmp_im)
         return self.sim(torch.abs(out_1 - out_2))
-
-class SiameseDetector(nn.Module): 
-    def __init__(self, backbone=None, distance_dim=4096): 
-        super(SiameseDetector, self).__init__()
-        self.distance_dim = distance_dim
-        if backbone is None: 
-            self.backbone = resnet18(weights=ResNet18_Weights.DEFAULT)
-        else: 
-            self.backbone = backbone
-        self.features = nn.Sequential(
-            nn.Dropout(p=0.5),
-            nn.Linear(1000, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-
-            nn.Dropout(p=0.5),
-            nn.Linear(512, 64),
-            nn.BatchNorm1d(64),
-            nn.Sigmoid(),
-            nn.Dropout(p=0.5),
-        )
-        self.sim = nn.Sequential(
-            nn.Linear(64, 1),
-            nn.Sigmoid(),
-        )
-        self.bb_regression = nn.Sequential(
-            nn.Linear(64, 4),
-        )
-        
-    def forward(self, base_im, cmp_im): 
-        out_1 = self.backbone(base_im)
-        out_2 = self.backbone(cmp_im)
-        features = self.features(torch.abs(out_1 - out_2))
-        sim = self.sim(features)
-        bb_regression = self.bb_regression(features)
-        return torch.cat((sim, bb_regression))
     
     
 class Triplet_Dataset(torch.utils.data.Dataset): 

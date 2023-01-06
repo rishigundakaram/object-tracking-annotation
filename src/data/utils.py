@@ -52,8 +52,8 @@ def combine_bb_frames_into_video(frames, boxes, fps, filename):
     video = cv2.VideoWriter(filename, fourcc, fps, (height,width))
     for idx in range(len(frames)): 
         cv_frame = cv2.cvtColor(np.array(frames[idx]), cv2.COLOR_RGB2BGR)
-        start = (boxes[idx][0], boxes[idx][1])
-        end = (boxes[idx][0] + boxes[idx][2], boxes[idx][1] + boxes[idx][3])
+        start = (int(boxes[idx][0]), int(boxes[idx][1]))
+        end = (int(boxes[idx][0]) + int(boxes[idx][2]), int(boxes[idx][1]) + int(boxes[idx][3]))
         cv_frame = cv2.rectangle(cv_frame, start, end, color, thickness)
         video.write(cv_frame)
     video.release()
